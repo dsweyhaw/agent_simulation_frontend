@@ -1,0 +1,15 @@
+services:
+  frontend:
+    container_name: ags_local_frontend
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - ags_network
+
+networks:
+  ags_network:
+    driver: bridge
