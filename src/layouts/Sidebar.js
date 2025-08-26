@@ -1,6 +1,7 @@
 import { FolderIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 import AddGamlButton from "../components/AddGamlButton";
+import AddProjectButton from "../components/AddProjectButton";
 
 function Sidebar({
   projectList,
@@ -8,6 +9,7 @@ function Sidebar({
   onSelectedProject,
   modelList,
   onModelUpload,
+  onProjectCreated,
 }) {
   const [expandedProject, setExpandedProject] = useState(null);
 
@@ -53,6 +55,10 @@ function Sidebar({
       <div className="mx-4 mb-2">
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold">Projects</span>
+          <AddProjectButton 
+            onProjectCreated={onProjectCreated}
+            className="ml-2"
+          />
         </div>
       </div>
 

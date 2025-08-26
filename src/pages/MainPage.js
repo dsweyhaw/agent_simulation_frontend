@@ -41,6 +41,12 @@ function MainPage() {
     console.log('Model uploaded successfully:', uploadResult);
   };
 
+  const handleProjectCreated = (projectResult) => {
+    // Refresh the project list after successful creation
+    getProject();
+    console.log('Project created successfully:', projectResult);
+  };
+
   useEffect(() => {
     getProject();
   }, []);
@@ -57,6 +63,7 @@ function MainPage() {
         onSelectedProject={onSelectedProject}
         modelList={modelList}
         onModelUpload={handleModelUpload}
+        onProjectCreated={handleProjectCreated}
       />
       {selectedProject.id && <Project selectedProject={selectedProject} />}
     </div>
