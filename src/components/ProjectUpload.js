@@ -12,6 +12,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     gamlFiles: []
   });
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [experimentNames, setExperimentNames] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -51,6 +52,13 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     });
   };
 
+  const handleExperimentNameChange = (relativePath, experimentName) => {
+    setExperimentNames(prev => ({
+      ...prev,
+      [relativePath]: experimentName
+    }));
+  };
+
   const handleUploadZip = async (e) => {
     e.preventDefault();
     
@@ -73,8 +81,13 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
       const response = await uploadProjectZip(formData.projectName, formData.zipFile);
 
       if (response.data.status === 'success') {
-        const { tempDirId, gamlFiles } = response.data.data;
+        const { tempDirId, gamlFiles, detectedProjectName } = response.data.data;
         setTempData({ tempDirId, gamlFiles });
+        
+        // Update project name with detected name if available
+        if (detectedProjectName) {
+          setFormData(prev => ({ ...prev, projectName: detectedProjectName }));
+        }
         
         // Pre-select valid GAML files
         const validFiles = gamlFiles
@@ -114,7 +127,8 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
       const response = await finalizeProject(
         formData.projectName,
         tempData.tempDirId,
-        selectedFiles
+        selectedFiles,
+        experimentNames
       );
 
       if (response.data.status === 'success') {
@@ -287,7 +301,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                       />
                       <label htmlFor={`file-${index}`} className="ml-3 flex-1">
                         <div className="flex items-center justify-between">
-                          <div>
+                          <div className="flex-1">
                             <p className={`text-sm font-medium ${file.isValid ? 'text-gray-900' : 'text-red-600'}`}>
                               {file.fileName}
                             </p>
@@ -298,6 +312,20 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                               <p className="text-xs text-red-600 mt-1">
                                 ❌ {file.validationError}
                               </p>
+                            )}
+                            
+                            {/* Experiment Name Input - Show only for selected valid files */}
+                            {file.isValid && selectedFiles.includes(file.relativePath) && (
+                              <div className="mt-2">
+                                <input
+                                  type="text"
+                                  placeholder="Experiment name (optional)"
+                                  value={experimentNames[file.relativePath] || ''}
+                                  onChange={(e) => handleExperimentNameChange(file.relativePath, e.target.value)}
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
                             )}
                           </div>
                           <div className="ml-4">

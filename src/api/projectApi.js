@@ -21,12 +21,13 @@ export const uploadProjectZip = async (projectName, zipFile) => {
   }
 };
 
-export const finalizeProject = async (projectName, tempDirId, selectedGamlFiles) => {
+export const finalizeProject = async (projectName, tempDirId, selectedGamlFiles, experimentNames = {}) => {
   try {
     const response = await axiosInstance.post('/projects/finalize', {
       projectName,
       tempDirId,
       selectedGamlFiles,
+      experimentNames,
     });
     return response;
   } catch (error) {
