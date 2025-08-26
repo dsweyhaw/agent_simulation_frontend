@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { uploadProjectZip, finalizeProject, cleanupTempDirectory } from '../api/projectApi';
 
 const ProjectUpload = ({ onUploadSuccess, onClose }) => {
@@ -175,19 +176,47 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-6xl mx-4 max-h-[95vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-6xl mx-4 max-h-[95vh] overflow-y-auto" 
+        style={{
+          minWidth: '900px',
+          minHeight: '700px',
+          maxWidth: '90vw',
+          maxHeight: '95vh',
+          margin: '0 auto',
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          padding: '32px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          overflow: 'auto'
+        }}
+      >
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-900">
             {step === 1 ? 'Upload Project ZIP' : 'Select GAML Files'}
           </h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
             disabled={loading}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -195,7 +224,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
 
         {/* Step 1: Upload ZIP */}
         {step === 1 && (
-          <form onSubmit={handleUploadZip} className="space-y-4">
+          <form onSubmit={handleUploadZip} className="space-y-6">
             {/* Auto-detected Project Name Display */}
             {formData.projectName && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -261,7 +290,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
 
         {/* Step 2: Select GAML Files */}
         {step === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <p className="text-sm text-blue-800">
                 Project "{formData.projectName}" extracted successfully! 
@@ -410,6 +439,8 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ProjectUpload;
