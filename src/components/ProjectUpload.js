@@ -177,7 +177,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-6xl mx-4 max-h-[95vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
             {step === 1 ? 'Upload Project ZIP' : 'Select GAML Files'}
@@ -270,62 +270,57 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
             </div>
 
             {/* GAML Files List */}
-            <div className="border border-gray-200 rounded-md max-h-96 overflow-y-auto">
-              <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                <h4 className="font-medium text-gray-900">
-                  Found {tempData.gamlFiles.length} GAML files
-                </h4>
+            <div className="border border-gray-200 rounded-md max-h-[500px] overflow-y-auto">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-lg font-medium text-gray-900">
+                    Found {tempData.gamlFiles.length} GAML files
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Selected: {selectedFiles.length} files
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  All files are shown as valid. Validation will occur when you create the project.
+                </p>
               </div>
               <div className="divide-y divide-gray-200">
                 {tempData.gamlFiles.map((file, index) => (
-                  <div key={index} className="px-4 py-3 hover:bg-gray-50">
-                    <div className="flex items-center">
+                  <div key={index} className="px-6 py-4 hover:bg-gray-50">
+                    <div className="flex items-start space-x-4">
                       <input
                         type="checkbox"
                         id={`file-${index}`}
                         checked={selectedFiles.includes(file.relativePath)}
                         onChange={(e) => handleFileSelection(file.relativePath, e.target.checked)}
                         disabled={!file.isValid}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 mt-1"
                       />
-                      <label htmlFor={`file-${index}`} className="ml-3 flex-1">
+                      <label htmlFor={`file-${index}`} className="flex-1 cursor-pointer">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <p className={`text-sm font-medium ${file.isValid ? 'text-gray-900' : 'text-red-600'}`}>
+                            <p className="text-base font-medium text-gray-900">
                               {file.fileName}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm text-gray-500 mt-1">
                               {file.relativePath} • {formatFileSize(file.fileSize)}
                             </p>
-                            {!file.isValid && (
-                              <p className="text-xs text-red-600 mt-1">
-                                ❌ {file.validationError}
-                              </p>
-                            )}
                             
-                            {/* Experiment Name Input - Show only for selected valid files */}
-                            {file.isValid && selectedFiles.includes(file.relativePath) && (
-                              <div className="mt-2">
+                            {/* Experiment Name Input - Show only for selected files */}
+                            {selectedFiles.includes(file.relativePath) && (
+                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <label className="block text-xs font-medium text-blue-800 mb-1">
+                                  Experiment Name (Optional)
+                                </label>
                                 <input
                                   type="text"
-                                  placeholder="Experiment name (optional)"
+                                  placeholder="Enter experiment name..."
                                   value={experimentNames[file.relativePath] || ''}
                                   onChange={(e) => handleExperimentNameChange(file.relativePath, e.target.value)}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            {file.isValid ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Valid
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Invalid
-                              </span>
                             )}
                           </div>
                         </div>
