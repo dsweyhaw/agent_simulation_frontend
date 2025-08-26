@@ -63,11 +63,6 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.projectName.trim()) {
-      setError('Project name is required');
-      return;
-    }
-    
     if (!formData.zipFile) {
       setError('Please select a ZIP file');
       return;
@@ -78,7 +73,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     setSuccess('');
 
     try {
-      const response = await uploadProjectZip(formData.projectName, formData.zipFile);
+      const response = await uploadProjectZip("auto-detect", formData.zipFile);
 
       if (response.data.status === 'success') {
         const { tempDirId, gamlFiles, detectedProjectName } = response.data.data;
@@ -201,23 +196,17 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
         {/* Step 1: Upload ZIP */}
         {step === 1 && (
           <form onSubmit={handleUploadZip} className="space-y-4">
-            {/* Project Name Input */}
-            <div>
-              <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1">
-                Project Name *
-              </label>
-              <input
-                type="text"
-                id="projectName"
-                name="projectName"
-                value={formData.projectName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter project name"
-                disabled={loading}
-                required
-              />
-            </div>
+            {/* Auto-detected Project Name Display */}
+            {formData.projectName && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">Detected Project Name:</span> {formData.projectName}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Project name will be automatically detected from ZIP structure
+                </p>
+              </div>
+            )}
 
             {/* ZIP File Upload */}
             <div>
