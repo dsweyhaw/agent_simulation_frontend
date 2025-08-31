@@ -86,6 +86,11 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
 
       if (response.data.status === 'success') {
         const { tempDirId, gamlFiles, detectedProjectName } = response.data.data;
+        
+        // Debug logging
+        console.log('Upload response data:', response.data.data);
+        console.log('GAML files received:', gamlFiles);
+        
         setTempData({ tempDirId, gamlFiles });
         
         // Update project name with detected name if available
@@ -97,6 +102,8 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
         const validFiles = gamlFiles
           .filter(file => file.isValid)
           .map(file => file.relativePath);
+        
+        console.log('Valid files filtered:', validFiles);
         setSelectedFiles(validFiles);
         
         setStep(2);
@@ -325,16 +332,22 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                 </p>
               </div>
               <div className="divide-y divide-gray-200">
-                {tempData.gamlFiles.map((file, index) => (
+                {tempData.gamlFiles.map((file, index) => {
+                  console.log(`File ${index}:`, file, 'isValid:', file.isValid, 'disabled:', !file.isValid);
+                  return (
                   <div key={index} className="px-6 py-4 hover:bg-gray-50">
                     <div className="flex items-start space-x-4">
                       <input
                         type="checkbox"
                         id={`file-${index}`}
                         checked={selectedFiles.includes(file.relativePath)}
-                        onChange={(e) => handleFileSelection(file.relativePath, e.target.checked)}
+                        onChange={(e) => {
+                          console.log('Checkbox clicked:', file.relativePath, e.target.checked);
+                          handleFileSelection(file.relativePath, e.target.checked);
+                        }}
                         disabled={!file.isValid}
-                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 mt-1"
+                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 mt-1 flex-shrink-0"
+                        style={{ minWidth: '20px', minHeight: '20px' }}
                       />
                       <label htmlFor={`file-${index}`} className="flex-1 cursor-pointer">
                         <div className="flex items-center justify-between">
@@ -367,7 +380,8 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                       </label>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
