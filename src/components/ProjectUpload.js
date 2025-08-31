@@ -35,6 +35,14 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
         setError('Please select a .zip file');
         return;
       }
+      
+      // Validate file size (100MB = 100 * 1024 * 1024 bytes)
+      const maxSizeBytes = 100 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        setError(`File size (${formatFileSize(file.size)}) exceeds the maximum limit of 100MB. Please select a smaller file.`);
+        return;
+      }
+      
       setFormData(prev => ({
         ...prev,
         zipFile: file
@@ -254,6 +262,9 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Upload a ZIP file containing your GAMA project with models and libraries
+              </p>
+              <p className="text-xs text-blue-600 mt-1 font-medium">
+                📁 Maximum file size: 100MB
               </p>
             </div>
 
