@@ -6,7 +6,10 @@ import { axiosInstance } from './axios';
 export const uploadGamlFile = async (projectId, experimentName, gamlFile) => {
   const formData = new FormData();
   formData.append('projectId', projectId);
-  formData.append('experimentName', experimentName);
+  
+  // Always append experiment name (even if empty) since @ModelAttribute expects all parameters
+  formData.append('experimentName', experimentName ? experimentName.trim() : '');
+  
   formData.append('gamlFile', gamlFile);
 
   try {

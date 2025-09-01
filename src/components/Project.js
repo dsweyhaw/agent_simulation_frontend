@@ -15,7 +15,7 @@ import NodeMetrics from "./NodeMetrics";
 
 const FRAME_RATE = 45;
 
-function Project({ selectedProject }) {
+function Project({ selectedProject, modelUploadTrigger }) {
   const [simulationMode, setSimulationMode] = useState("multi");
   const [multiSimulationStatus, setMultiSimulationStatus] = useState(null);
   const [multiSimulationResults, setMultiSimulationResults] = useState([]);
@@ -70,7 +70,12 @@ function Project({ selectedProject }) {
   };
 
   const getModelOptions = async () => {
+    console.log('=== Project: getModelOptions called ===');
+    console.log('Project ID:', selectedProject.id);
+    
     await getModelOptionsList(selectedProject.id, true).then((response) => {
+      console.log('Model options API response:', response.data);
+      console.log('Setting model options for dropdown:', response.data.data);
       setModelOptions(response.data.data);
     });
   };
@@ -203,6 +208,17 @@ function Project({ selectedProject }) {
       getNode();
     }
   }, [selectedProject?.id]);
+
+  // Refresh model options when a model is uploaded
+  useEffect(() => {
+    if (modelUploadTrigger > 0 && selectedProject?.id) {
+      console.log('=== Project: Model uploaded, refreshing options ===');
+      setTimeout(() => {
+        console.log('Refreshing model options for simulation dropdown...');
+        getModelOptions();
+      }, 600); // Slightly longer delay than MainPage to ensure database consistency
+    }
+  }, [modelUploadTrigger, selectedProject?.id]);
 
   return (
     <>

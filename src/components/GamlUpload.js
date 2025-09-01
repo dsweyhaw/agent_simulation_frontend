@@ -40,10 +40,10 @@ const GamlUpload = ({ projectId, onUploadSuccess, onClose }) => {
     e.preventDefault();
     
     // Validation
-    if (!formData.experimentName.trim()) {
-      setError('Experiment name is required');
-      return;
-    }
+    // if (!formData.experimentName.trim()) {
+    //   setError('Experiment name is required');
+    //   return;
+    // }
     
     if (!formData.gamlFile) {
       setError('Please select a GAML file');
@@ -70,7 +70,9 @@ const GamlUpload = ({ projectId, onUploadSuccess, onClose }) => {
         const fileInput = document.getElementById('gamlFile');
         if (fileInput) fileInput.value = '';
 
-        // Call success callback
+        // Call success callback with detailed logging
+        console.log('GAML Upload Success - Full Response:', response.data);
+        console.log('GAML Upload Success - Data to pass:', response.data.data);
         if (onUploadSuccess) {
           onUploadSuccess(response.data.data);
         }
@@ -78,7 +80,7 @@ const GamlUpload = ({ projectId, onUploadSuccess, onClose }) => {
         // Auto close after success
         setTimeout(() => {
           if (onClose) onClose();
-        }, 2000);
+        }, 1500);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -117,7 +119,7 @@ const GamlUpload = ({ projectId, onUploadSuccess, onClose }) => {
           {/* Experiment Name Input */}
           <div>
             <label htmlFor="experimentName" className="block text-sm font-medium text-gray-700 mb-1">
-              Experiment Name *
+              Experiment Name (Optional)
             </label>
             <input
               type="text"
@@ -128,8 +130,10 @@ const GamlUpload = ({ projectId, onUploadSuccess, onClose }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter experiment name"
               disabled={loading}
-              required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              If provided, an experiment will be created along with the model. Leave empty to create only the model.
+            </p>
           </div>
 
           {/* File Upload */}

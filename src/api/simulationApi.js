@@ -120,3 +120,12 @@ export const getSimulationMetrics = async (resultIds) => {
     `/metrics/simulation?experiment_result_ids=${resultIds}`
   );
 };
+
+// Delete APIs
+export const deleteProject = async (projectId) => {
+  return await axiosInstance.delete(`/projects/${projectId}`);
+};
+
+export const deleteModel = async (modelId, projectId) => {
+  return await axiosInstance.delete(`/models/${modelId}?project_id=${projectId}`);
+};

@@ -1,7 +1,9 @@
-import { FolderIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
+import { FolderIcon, ChevronDownIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 import AddGamlButton from "../components/AddGamlButton";
 import AddProjectButton from "../components/AddProjectButton";
+import ConfirmDialog from "../components/ConfirmDialog";
+import { deleteProject, deleteModel } from "../api/simulationApi";
 
 function Sidebar({
   projectList,
@@ -10,8 +12,17 @@ function Sidebar({
   modelList,
   onModelUpload,
   onProjectCreated,
+  onProjectDeleted,
+  onModelDeleted,
 }) {
   const [expandedProject, setExpandedProject] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    type: '', // 'project' or 'model'
+    item: null,
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     if (selectedProject.id) {
@@ -40,6 +51,53 @@ function Sidebar({
 
   const formatModelName = (name) => {
     return name.endsWith(".gaml") ? name : `${name}.gaml`;
+  };
+
+  const handleDeleteProject = (project, event) => {
+    event.stopPropagation();
+    setDeleteDialog({
+      isOpen: true,
+      type: 'project',
+      item: project,
+      title: 'Delete Project',
+      message: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will delete all models in this project.`
+    });
+  };
+
+  const handleDeleteModel = (model, event) => {
+    event.stopPropagation();
+    setDeleteDialog({
+      isOpen: true,
+      type: 'model',
+      item: model,
+      title: 'Delete Model',
+      message: `Are you sure you want to delete "${formatModelName(model.name)}"? This action cannot be undone.`
+    });
+  };
+
+  const confirmDelete = async () => {
+    const { type, item } = deleteDialog;
+    
+    try {
+      if (type === 'project') {
+        await deleteProject(item.id);
+        console.log('Project deleted successfully:', item.name);
+        onProjectDeleted && onProjectDeleted();
+      } else if (type === 'model') {
+        await deleteModel(item.id, selectedProject.id);
+        console.log('Model deleted successfully:', item.name);
+        onModelDeleted && onModelDeleted();
+      }
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
+      // You could add a toast notification here for error handling
+    }
+    
+    setDeleteDialog({ isOpen: false, type: '', item: null, title: '', message: '' });
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialog({ isOpen: false, type: '', item: null, title: '', message: '' });
   };
 
   return (
@@ -85,14 +143,22 @@ function Sidebar({
                     {project.name}
                   </div>
 
-                  {isSelected && (
-                    <ChevronDownIcon
-                      className={`size-5 text-gray-500 cursor-pointer transition-transform duration-200 ${
-                        isExpanded ? "rotate-180" : ""
-                      }`}
-                      onClick={(e) => toggleModels(project.id, e)}
+                  <div className="flex items-center gap-1">
+                    <TrashIcon 
+                      className="size-4 text-red-500 hover:text-red-700 cursor-pointer"
+                      onClick={(e) => handleDeleteProject(project, e)}
+                      title="Delete project"
                     />
-                  )}
+                    
+                    {isSelected && (
+                      <ChevronDownIcon
+                        className={`size-5 text-gray-500 cursor-pointer transition-transform duration-200 ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                        onClick={(e) => toggleModels(project.id, e)}
+                      />
+                    )}
+                  </div>
                 </li>
 
                 {isSelected && isExpanded && (
@@ -111,9 +177,14 @@ function Sidebar({
                       {modelList.map((model) => (
                         <li
                           key={model.id}
-                          className="flex items-center p-2 text-sm text-gray-600"
+                          className="flex items-center justify-between p-2 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
                         >
-                          {formatModelName(model.name)}
+                          <span>{formatModelName(model.name)}</span>
+                          <TrashIcon 
+                            className="size-4 text-red-500 hover:text-red-700 cursor-pointer ml-2"
+                            onClick={(e) => handleDeleteModel(model, e)}
+                            title="Delete model"
+                          />
                         </li>
                       ))}
                     </ul>
@@ -124,6 +195,18 @@ function Sidebar({
           })}
         </ul>
       </div>
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog 
+        isOpen={deleteDialog.isOpen}
+        title={deleteDialog.title}
+        message={deleteDialog.message}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive={true}
+      />
     </aside>
   );
 }

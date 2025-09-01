@@ -86,11 +86,6 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
 
       if (response.data.status === 'success') {
         const { tempDirId, gamlFiles, detectedProjectName } = response.data.data;
-        
-        // Debug logging
-        console.log('Upload response data:', response.data.data);
-        console.log('GAML files received:', gamlFiles);
-        
         setTempData({ tempDirId, gamlFiles });
         
         // Update project name with detected name if available
@@ -99,11 +94,10 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
         }
         
         // Pre-select valid GAML files
+        // Note: Backend sends validationError as null for valid files, and isValid might be undefined
         const validFiles = gamlFiles
-          .filter(file => file.isValid)
+          .filter(isValidFile)
           .map(file => file.relativePath);
-        
-        console.log('Valid files filtered:', validFiles);
         setSelectedFiles(validFiles);
         
         setStep(2);
@@ -191,6 +185,11 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Helper function to determine if a file is valid
+  const isValidFile = (file) => {
+    return file.isValid === true || (file.isValid === undefined && file.validationError === null);
+  };
+
   const modalContent = (
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" 
@@ -270,9 +269,6 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
               <p className="text-xs text-gray-500 mt-1">
                 Upload a ZIP file containing your GAMA project with models and libraries
               </p>
-              <p className="text-xs text-blue-600 mt-1 font-medium">
-                📁 Maximum file size: 100MB
-              </p>
             </div>
 
             {/* Form Actions */}
@@ -332,22 +328,16 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                 </p>
               </div>
               <div className="divide-y divide-gray-200">
-                {tempData.gamlFiles.map((file, index) => {
-                  console.log(`File ${index}:`, file, 'isValid:', file.isValid, 'disabled:', !file.isValid);
-                  return (
+                {tempData.gamlFiles.map((file, index) => (
                   <div key={index} className="px-6 py-4 hover:bg-gray-50">
                     <div className="flex items-start space-x-4">
                       <input
                         type="checkbox"
                         id={`file-${index}`}
                         checked={selectedFiles.includes(file.relativePath)}
-                        onChange={(e) => {
-                          console.log('Checkbox clicked:', file.relativePath, e.target.checked);
-                          handleFileSelection(file.relativePath, e.target.checked);
-                        }}
-                        disabled={!file.isValid}
-                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 mt-1 flex-shrink-0"
-                        style={{ minWidth: '20px', minHeight: '20px' }}
+                        onChange={(e) => handleFileSelection(file.relativePath, e.target.checked)}
+                        disabled={!isValidFile(file)}
+                        className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 mt-1"
                       />
                       <label htmlFor={`file-${index}`} className="flex-1 cursor-pointer">
                         <div className="flex items-center justify-between">
@@ -380,8 +370,7 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                       </label>
                     </div>
                   </div>
-                  );
-                })}
+                ))}
               </div>
             </div>
 

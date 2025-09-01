@@ -5,12 +5,18 @@ const AddGamlButton = ({ projectId, onUploadSuccess, className = '' }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
 
   const handleUploadSuccess = (uploadResult) => {
+    console.log('=== AddGamlButton: handleUploadSuccess called ===');
+    console.log('Upload Result:', uploadResult);
+    
     // Close modal
     setShowUploadModal(false);
     
     // Call parent callback
     if (onUploadSuccess) {
+      console.log('Calling parent onUploadSuccess callback');
       onUploadSuccess(uploadResult);
+    } else {
+      console.warn('No onUploadSuccess callback provided');
     }
   };
 
