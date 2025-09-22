@@ -9,7 +9,8 @@ export const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  if (config.headers) {
+  // Only add auth token if it exists (for production)
+  if (config.headers && process.env.REACT_APP_API_KEY) {
     config.headers["Authorization"] = `Bearer ${process.env.REACT_APP_API_KEY}`;
   }
   return config;
