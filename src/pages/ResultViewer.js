@@ -3,7 +3,12 @@ import { useEffect, useState, useRef } from "react";
 import {
   getImageResultFromRange,
   getCategoriesResult,
+  getExperimentResultDetail,
+  getTsunamiStatistics,
 } from "../api/simulationApi";
+import SimulationParameterDisplay from "../components/SimulationParameterDisplay";
+import TsunamiStatisticsView from "../components/TsunamiStatisticsView";
+import ImageModal from "../components/ImageModal";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -34,6 +39,16 @@ function ResultViewer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(100);
   const eventSourceRef = useRef(null);
+  
+  // New states for Tsunami features
+  const [isTsunamiProject, setIsTsunamiProject] = useState(false);
+  const [simulationParameters, setSimulationParameters] = useState({});
+  const [statsData, setStatsData] = useState(null);
+  const [showStats, setShowStats] = useState(false);
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState({ src: "", alt: "", name: "" });
 
   quantum.register();
 
@@ -71,6 +86,41 @@ function ResultViewer() {
         });
       };
       getCategories();
+      
+      // Get experiment details to detect Tsunami project
+      const getExperimentDetails = async () => {
+        try {
+          const response = await getExperimentResultDetail(resultId);
+          const modelName = response.data.data.modelName?.toLowerCase() || '';
+          const experimentName = response.data.data.experimentName?.toLowerCase() || '';
+          
+          const isTsunami = modelName.includes('tsunami') || 
+                           experimentName.includes('tsunami') ||
+                           modelName.includes('tsunami.gaml');
+          
+          console.log("🌊 Individual ResultViewer - Tsunami detection:", {
+            modelName: response.data.data.modelName,
+            experimentName: response.data.data.experimentName,
+            isTsunami
+          });
+          
+          setIsTsunamiProject(isTsunami);
+          
+          if (isTsunami) {
+            // Mock parameters for Tsunami
+            setSimulationParameters({
+              "Number of locals": "200",
+              "Number of tourists": "100", 
+              "Number of rescuers": "20",
+              "Tourist Movement Strategy": "following rescuers or locals"
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching experiment details:", error);
+        }
+      };
+      
+      getExperimentDetails();
     }
 
     return () => {
@@ -78,7 +128,7 @@ function ResultViewer() {
         eventSourceRef.current.close();
       }
     };
-  }, []);
+  }, [resultId]);
 
   const startAnimation = () => {
     setIsPlaying(true);
@@ -125,6 +175,38 @@ function ResultViewer() {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
+    
+    // Load statistics when animation stops (for Tsunami)
+    if (isTsunamiProject && !showStats) {
+      loadTsunamiStatistics();
+    }
+  };
+  
+  const loadTsunamiStatistics = async () => {
+    try {
+      console.log("🌊 Loading Tsunami statistics for individual result:", resultId);
+      setShowStats(true);
+      const response = await getTsunamiStatistics(resultId);
+      console.log("📊 Individual Tsunami statistics response:", response.data);
+      setStatsData(response.data.data);
+    } catch (error) {
+      console.error("❌ Error loading individual Tsunami statistics:", error);
+    }
+  };
+
+  // Handle image click to open modal
+  const handleImageClick = (image) => {
+    setModalImage({
+      src: `data:image/jpeg;base64,${image.encodedImage}`,
+      alt: image.name,
+      name: image.name
+    });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalImage({ src: "", alt: "", name: "" });
   };
 
   const resetToStart = () => {
@@ -331,6 +413,17 @@ function ResultViewer() {
         )}
       </div>
 
+      {/* Display simulation parameters for Tsunami */}
+      {isTsunamiProject && Object.keys(simulationParameters).length > 0 && (
+        <div className="max-w-4xl mx-auto mt-6 mb-6">
+          <SimulationParameterDisplay 
+            parameters={simulationParameters} 
+            isTsunamiProject={isTsunamiProject}
+            compact={false}
+          />
+        </div>
+      )}
+
       {loading ? (
         <div className="h-screen w-screen place-content-center">
           <div className="flex justify-center">
@@ -341,17 +434,46 @@ function ResultViewer() {
         <div className="flex flex-wrap gap-6 items-center place-content-center mx-4 my-12">
           {images.map((image, index) => (
             <div key={index}>
-              <div className="mx-auto bg-white border w-fit p-5 border-gray-300 rounded-lg shadow-xl">
-                <img
-                  alt={image.name}
-                  src={`data:image/jpeg;base64,${image.encodedImage}`}
-                />
+              <div 
+                className="mx-auto bg-white border w-fit p-5 border-gray-300 rounded-lg shadow-xl cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                onClick={() => handleImageClick(image)}
+              >
+                <div className="relative">
+                  <img
+                    alt={image.name}
+                    src={`data:image/jpeg;base64,${image.encodedImage}`}
+                  />
+                  {/* Click indicator */}
+                  <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 flex items-center justify-center opacity-0 hover:opacity-100">
+                    <div className="bg-white/90 rounded-full p-2">
+                      <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
               </div>
               <h1 className="text-center text-2xl my-4">{image.name}</h1>
             </div>
           ))}
         </div>
       )}
+
+      {/* Display Tsunami Statistics after images (when animation is complete) */}
+      {isTsunamiProject && showStats && statsData && (
+        <div className="max-w-7xl mx-auto mt-12 mb-8 px-4">
+          <TsunamiStatisticsView data={statsData} />
+        </div>
+      )}
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        imageSrc={modalImage.src}
+        imageAlt={modalImage.alt}
+        imageName={modalImage.name}
+      />
     </div>
   );
 }

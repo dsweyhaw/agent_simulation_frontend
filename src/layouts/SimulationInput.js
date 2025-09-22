@@ -218,7 +218,7 @@ function SimulationInput({
             type="number"
             disabled={isSimulationRunning}
             name={name}
-            value={displayStep}
+            value={displayStep || ""}
             min="1" // Added min attribute
             max={MAX_DISPLAY_STEPS} // Added max attribute
             className={
@@ -233,7 +233,7 @@ function SimulationInput({
           <input
             type="number"
             disabled={isSimulationRunning}
-            value={daysValue}
+            value={daysValue || ""}
             className={
               error === "No Error" ? validInputFormat : errorInputFormat
             }

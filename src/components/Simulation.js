@@ -110,12 +110,18 @@ function Simulation({
           interval.current = setInterval(updateStatus, 3000);
         }
 
-        if (
-          (data.status === 2 && data.currentStep === finalStep) ||
-          data.status === 3
-        ) {
+        // Stop polling when simulation is finished (status 3) or ready for download (status 5)
+        if (data.status === 3 || data.status === 5) {
           clearInterval(interval.current);
-          interval.current = setInterval(updateStatus, 3000);
+          checkSimulationFinish(); // Notify parent component that simulation is done
+          return; // Stop polling completely
+        }
+        
+        // Continue polling if simulation is still in progress (status 2)
+        if (data.status === 2 && data.currentStep === finalStep) {
+          // Simulation reached final step but still processing
+          clearInterval(interval.current);
+          interval.current = setInterval(updateStatus, 3000); // Poll less frequently
         }
       } catch (error) {
         console.log(error);
@@ -315,7 +321,7 @@ function Simulation({
             </div>
 
             {/* Add keyframes for shimmer animation */}
-            <style jsx>{`
+            <style>{`
               @keyframes shimmer {
                 0% {
                   transform: translateX(-100%);

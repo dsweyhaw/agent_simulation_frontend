@@ -107,7 +107,7 @@ function Sidebar({
     >
       <div className="flex px-3 py-4 items-center gap-2 justify-center text-center">
         <img src="/favicon.ico" className="size-10" alt="logo" />
-        <h1 className="font-semibold text-lg">Pig Farm Simulation</h1>
+        <h1 className="font-semibold text-lg">Tsunami Simulation</h1>
       </div>
 
       <div className="mx-4 mb-2">

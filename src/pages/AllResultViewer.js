@@ -5,6 +5,7 @@ import {
   getCategoriesResult,
   getExperimentResultDetail,
   getStatistics,
+  getTsunamiStatistics,
   getSimulationMetrics,
 } from "../api/simulationApi";
 import {
@@ -22,7 +23,9 @@ import { quantum } from "ldrs";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import FarmPanoramaView from "./FarmPanoramaView";
 import StatisticsView from "../components/StatisticsView";
+import TsunamiStatisticsView from "../components/TsunamiStatisticsView";
 import PerformanceMetrics from "../components/PerformanceMetrics";
+import SimulationParameterDisplay from "../components/SimulationParameterDisplay";
 
 function AllResultViewer() {
   const FRAME_RATE = 45;
@@ -45,6 +48,8 @@ function AllResultViewer() {
   const [displayStep, setDisplayStep] = useState(0);
   const [showStats, setShowStats] = useState(true);
   const [statsData, setStatsData] = useState(null);
+  const [isTsunamiProject, setIsTsunamiProject] = useState(false);
+  const [simulationParameters, setSimulationParameters] = useState({});
 
   const eventSourceRef = useRef(null);
 
@@ -93,15 +98,26 @@ function AllResultViewer() {
     if (showStats && !statsData) {
       const fetchStats = async () => {
         try {
-          const response = await getStatistics(resultIds);
+          console.log("🔍 Fetching statistics for resultIds:", resultIds, "isTsunamiProject:", isTsunamiProject);
+          
+          let response;
+          if (isTsunamiProject) {
+            console.log("🌊 Calling Tsunami statistics API");
+            response = await getTsunamiStatistics(resultIds);
+          } else {
+            console.log("🐷 Calling Pig Farm statistics API");
+            response = await getStatistics(resultIds);
+          }
+          
+          console.log("📊 Statistics API response:", response.data);
           setStatsData(response.data.data);
         } catch (error) {
-          console.error("Error fetching statistics:", error);
+          console.error("❌ Error fetching statistics:", error);
         }
       };
       fetchStats();
     }
-  }, [showStats, statsData, resultIds]);
+  }, [showStats, statsData, resultIds, isTsunamiProject]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -152,8 +168,33 @@ function AllResultViewer() {
           stepsMap[item.resultId] = item.finalStep;
           experimentResultDetailMap[item.resultId] = item;
         });
+        console.log("🔧 Experiment result details:", experimentResultDetailMap);
         setMaxFinalStep(Math.max(...Object.values(stepsMap)));
         setExperimentResultDetails(experimentResultDetailMap);
+        
+        // Detect if this is a Tsunami project based on model names
+        const modelNames = Object.values(experimentResultDetailMap).map(detail => 
+          detail.modelName?.toLowerCase() || ''
+        );
+        const isTsunami = modelNames.some(name => 
+          name.includes('tsunami') || name.includes('tsunami.gaml')
+        );
+        setIsTsunamiProject(isTsunami);
+        
+        // Mock parameters for testing (will be replaced with real API)
+        if (isTsunami) {
+          setSimulationParameters({
+            "Number of locals": "200",
+            "Number of tourists": "100", 
+            "Number of rescuers": "20",
+            "Tourist Movement Strategy": "following rescuers or locals"
+          });
+          
+          // Force stats refresh when Tsunami project is detected
+          console.log("🌊 Tsunami project detected, forcing stats refresh");
+          setViewMode("panorama"); // Force panorama mode for Tsunami
+          setStatsData(null); // Reset stats to trigger re-fetch with correct API
+        }
       } catch (error) {
         console.error("Error fetching final steps:", error);
       }
@@ -187,9 +228,22 @@ function AllResultViewer() {
       .flatMap(([resultId, categories]) =>
         categories
           .filter(
-            (cat) =>
-              cat.name.toLowerCase().includes("simulator") ||
-              cat.name.toLowerCase().includes("pigpen")
+            (cat) => {
+              const name = cat.name.toLowerCase();
+              if (isTsunamiProject) {
+                // For Tsunami project, show main display and charts
+                return (name.includes("main_display") || 
+                        name.includes("death percentage") || 
+                        name.includes("overall safety") ||
+                        name.includes("chart"));
+              } else {
+                // For Pig Farm project, show simulator and pigpen
+                return (
+                  name.includes("simulator") ||
+                  name.includes("pigpen")
+                );
+              }
+            }
           )
           .map((cat) => cat.id)
       )
@@ -220,10 +274,15 @@ function AllResultViewer() {
             (cat) => cat.id === category.categoryId
           )?.name;
 
-          if (
-            categoryName?.toLowerCase().includes("simulator") ||
-            categoryName?.toLowerCase().includes("pigpen")
-          ) {
+          const name = categoryName?.toLowerCase() || '';
+          const shouldShow = isTsunamiProject 
+            ? (name.includes("main_display") || 
+               name.includes("death percentage") || 
+               name.includes("overall safety") ||
+               name.includes("chart"))
+            : (name.includes("simulator") || name.includes("pigpen"));
+          
+          if (shouldShow) {
             if (!newImages[category.experimentResultId]) {
               newImages[category.experimentResultId] = [];
             }
@@ -305,22 +364,35 @@ function AllResultViewer() {
     });
 
     const responses = await Promise.all(imagePromises);
+    console.log("📷 Image responses:", responses);
+    console.log("🎯 Current filter mode - isTsunamiProject:", isTsunamiProject);
 
     const newImages = {};
     responses.forEach((response) => {
       if (response.success && response.data?.data?.steps?.[0]?.categories) {
         const resultId = response.resultId;
         const categories = response.data.data.steps[0].categories;
+        console.log(`🎯 Processing categories for result ${resultId}:`, categories);
+        
+        // Debug: List all category names
+        const allCategoryNames = categories.map(cat => {
+          const categoryName = categoryId[resultId]?.find(c => c.id === cat.categoryId)?.name;
+          return categoryName;
+        });
+        console.log(`📋 All category names for result ${resultId}:`, allCategoryNames);
 
         const simulatorImages = categories
           .filter((category) => {
             const categoryName = categoryId[resultId]?.find(
               (cat) => cat.id === category.categoryId
             )?.name;
-            return (
-              categoryName?.toLowerCase().includes("simulator") ||
-              categoryName?.toLowerCase().includes("pigpen")
-            );
+            const name = categoryName?.toLowerCase() || '';
+            return isTsunamiProject 
+              ? (name.includes("main_display") || 
+                 name.includes("death percentage") || 
+                 name.includes("overall safety") ||
+                 name.includes("chart"))
+              : (name.includes("simulator") || name.includes("pigpen"));
           })
           .map((category) => ({
             id: category.categoryId,
@@ -330,8 +402,12 @@ function AllResultViewer() {
             )?.name,
           }));
 
+        console.log(`📊 Filtered images for result ${resultId}:`, simulatorImages);
+        
         if (simulatorImages.length > 0) {
           newImages[resultId] = simulatorImages;
+        } else {
+          console.log(`⚠️ No images found for result ${resultId} after filtering`);
         }
       }
     });
@@ -346,9 +422,10 @@ function AllResultViewer() {
 
   useEffect(() => {
     if (!isPlaying) {
+      console.log("🖼️ Getting images for step:", currentStep, "categoryId:", categoryId, "isTsunamiProject:", isTsunamiProject);
       getImagesForAllResults();
     }
-  }, [currentStep, categoryId, isPlaying]);
+  }, [currentStep, categoryId, isPlaying, isTsunamiProject]);
 
   const handleChange = (e) => {
     setError(false);
@@ -470,15 +547,17 @@ function AllResultViewer() {
           <ForwardIcon className="size-5" />
         </button>
 
-        <button
-          type="button"
-          onClick={() =>
-            setViewMode(viewMode === "detail" ? "panorama" : "detail")
-          }
-          className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5"
-        >
-          {viewMode === "detail" ? "Panorama Mode" : "Detail Mode"}
-        </button>
+        {!isTsunamiProject && (
+          <button
+            type="button"
+            onClick={() =>
+              setViewMode(viewMode === "detail" ? "panorama" : "detail")
+            }
+            className="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5"
+          >
+            {viewMode === "detail" ? "Panorama Mode" : "Detail Mode"}
+          </button>
+        )}
 
         <button
           onClick={() => setShowStats(!showStats)}
@@ -527,6 +606,17 @@ function AllResultViewer() {
         </div>
       )}
 
+      {/* Display simulation parameters for Tsunami */}
+      {isTsunamiProject && Object.keys(simulationParameters).length > 0 && (
+        <div className="max-w-4xl mx-auto mt-6 mb-6">
+          <SimulationParameterDisplay 
+            parameters={simulationParameters} 
+            isTsunamiProject={isTsunamiProject}
+            compact={false}
+          />
+        </div>
+      )}
+
       {loading ? (
         <div className="h-screen w-screen place-content-center">
           <div className="flex justify-center">
@@ -548,9 +638,20 @@ function AllResultViewer() {
               key={resultId}
               className="border rounded-lg p-6 bg-white shadow-lg"
             >
-              <h2 className="text-2xl font-bold mb-6 text-center">
+              <h2 className="text-2xl font-bold mb-4 text-center">
                 {experimentResultDetails[resultId]?.experimentName}
               </h2>
+              
+              {/* Display simulation parameters */}
+              {Object.keys(simulationParameters).length > 0 && (
+                <div className="mb-4">
+                  <SimulationParameterDisplay 
+                    parameters={simulationParameters} 
+                    isTsunamiProject={isTsunamiProject}
+                    compact={true}
+                  />
+                </div>
+              )}
               {images[resultId]?.map((image, imageIndex) => (
                 <div key={imageIndex} className="group">
                   <Link
@@ -607,13 +708,19 @@ function AllResultViewer() {
         </div>
       ) : (
         <div className="w-full h-[calc(100vh-200px)] max-w-[90%] mx-auto">
-          <FarmPanoramaView resultImages={images} currentStep={currentStep} />
+          <FarmPanoramaView resultImages={images} currentStep={currentStep} isTsunamiProject={isTsunamiProject} />
         </div>
       )}
 
       {metricsData && <PerformanceMetrics data={metricsData} />}
 
-      {showStats && statsData && <StatisticsView data={statsData} />}
+      {showStats && statsData && (
+        isTsunamiProject ? (
+          <TsunamiStatisticsView data={statsData} />
+        ) : (
+          <StatisticsView data={statsData} />
+        )
+      )}
     </div>
   );
 }

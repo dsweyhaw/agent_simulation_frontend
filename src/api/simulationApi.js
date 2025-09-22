@@ -34,6 +34,30 @@ export const runSimulation = async (simulationRequests) => {
   });
 };
 
+export const runSimulationWithParameters = async (simulationRequests, gamaParams = {}) => {
+  // Convert all parameter values to strings as expected by backend
+  const stringParams = {};
+  Object.keys(gamaParams).forEach(key => {
+    stringParams[key] = String(gamaParams[key]);
+  });
+
+  console.log("=== API CALL DEBUG ===");
+  console.log("Original gamaParams:", gamaParams);
+  console.log("Converted stringParams:", stringParams);
+
+  // Add gamaParams to each simulation request
+  const enhancedRequests = simulationRequests.map(request => ({
+    ...request,
+    gamaParams: stringParams
+  }));
+  
+  console.log("Enhanced simulation requests:", enhancedRequests);
+  
+  return await axiosInstance.post("/simulations/cluster", {
+    simulationRequests: enhancedRequests,
+  });
+};
+
 export const stopSimulation = async (resultId) => {
   return await axiosInstance.delete(`/experiment_results/${resultId}/stop`);
 };
@@ -107,6 +131,12 @@ export const getStatistics = async (resultIds) => {
   );
 };
 
+export const getTsunamiStatistics = async (resultIds) => {
+  return await axiosInstance.get(
+    `/simulation_statistics/tsunami?experiment_result_ids=${resultIds}`
+  );
+};
+
 export const getNodeMetrics = async () => {
   // return await axiosInstance.get("/metrics");
 };
@@ -128,4 +158,9 @@ export const deleteProject = async (projectId) => {
 
 export const deleteModel = async (modelId, projectId) => {
   return await axiosInstance.delete(`/models/${modelId}?project_id=${projectId}`);
+};
+
+// Get experiment parameters for GAML models
+export const getExperimentParameters = async (projectId, modelId, experimentId) => {
+  return await axiosInstance.get(`/simulations/experiments/${experimentId}/parameters?project_id=${projectId}&model_id=${modelId}`);
 };

@@ -2,12 +2,14 @@ import AddSimulation from "./AddSimulation";
 import Alert from "../layouts/Alert";
 import Simulation from "./Simulation";
 import MultiSimulationInput from "./MultiSimulationInput";
+import SimpleParameterInput from "./SimpleParameterInput";
 import { runMultiSimulation } from "../api/simulationApi";
 import { useEffect, useState } from "react";
 import {
   getModelOptionsList,
   getNodeList,
   runSimulation,
+  runSimulationWithParameters,
 } from "../api/simulationApi";
 import { ArrowPathIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { Link } from "react-router-dom";
@@ -18,6 +20,7 @@ const FRAME_RATE = 45;
 function Project({ selectedProject, modelUploadTrigger }) {
   const [simulationMode, setSimulationMode] = useState("multi");
   const [multiSimulationStatus, setMultiSimulationStatus] = useState(null);
+  const [simulationParameters, setSimulationParameters] = useState({});
   const [multiSimulationResults, setMultiSimulationResults] = useState([]);
 
   const [nodeList, setNodeList] = useState([]);
@@ -128,7 +131,16 @@ function Project({ selectedProject, modelUploadTrigger }) {
 
     setDisableSimulation(true);
 
-    await runSimulation(simulationRequests)
+    // Use enhanced simulation API with parameters
+    console.log("=== SIMULATION DEBUG ===");
+    console.log("simulationParameters:", simulationParameters);
+    console.log("simulationRequests:", simulationRequests);
+    
+    const simulationCall = Object.keys(simulationParameters).length > 0 
+      ? runSimulationWithParameters(simulationRequests, simulationParameters)
+      : runSimulation(simulationRequests);
+      
+    await simulationCall
       .then((response) => {
         setSimulationStatus("Success! Simulation is running.");
         setError(false);
@@ -200,6 +212,16 @@ function Project({ selectedProject, modelUploadTrigger }) {
     getModelOptions();
     getNode();
   }, []);
+
+  // Monitor simulation completion
+  useEffect(() => {
+    if (checkFinish > 0 && checkFinish === simulation.length) {
+      // All simulations have finished
+      console.log("All simulations completed, resetting running state");
+      setIsSimulationRunning(false);
+      setDisableSimulation(false);
+    }
+  }, [checkFinish, simulation.length]);
 
   useEffect(() => {
     if (selectedProject?.id) {
@@ -424,6 +446,19 @@ function Project({ selectedProject, modelUploadTrigger }) {
             )}
 
             <div className="px-4 pb-4 overflow-y-auto flex-grow sm:ml-80">
+
+
+
+              {/* Parameter Input Section - Show only for Tsunami project */}
+              {selectedProject && selectedProject.name === "Tsunami" && simulation.length > 0 && (
+                <div className="mb-6">
+                  <SimpleParameterInput
+                    onParametersChange={setSimulationParameters}
+                    isSimulationRunning={isSimulationRunning}
+                  />
+                </div>
+              )}
+
               {selectedProject.id === 2 && simulationMode === "multi" ? (
                 // Multi simulation mode for Project ID 2
                 !isSimulationRunning ? (
