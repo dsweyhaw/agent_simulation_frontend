@@ -68,6 +68,17 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
     }));
   };
 
+  const handleSelectAll = () => {
+    const validFiles = tempData.gamlFiles
+      .filter(isValidFile)
+      .map(file => file.relativePath);
+    setSelectedFiles(validFiles);
+  };
+
+  const handleUnselectAll = () => {
+    setSelectedFiles([]);
+  };
+
   const handleUploadZip = async (e) => {
     e.preventDefault();
     
@@ -319,9 +330,29 @@ const ProjectUpload = ({ onUploadSuccess, onClose }) => {
                   <h4 className="text-lg font-medium text-gray-900">
                     Found {tempData.gamlFiles.length} GAML files
                   </h4>
-                  <p className="text-sm text-gray-600">
-                    Selected: {selectedFiles.length} files
-                  </p>
+                  <div className="flex items-center space-x-4">
+                    <p className="text-sm text-gray-600">
+                      Selected: {selectedFiles.length} files
+                    </p>
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 border border-blue-300 rounded hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        disabled={loading}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleUnselectAll}
+                        className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+                        disabled={loading}
+                      >
+                        Unselect All
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   All files are shown as valid. Validation will occur when you create the project.
