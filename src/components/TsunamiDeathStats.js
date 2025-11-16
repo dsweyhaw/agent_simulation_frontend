@@ -23,30 +23,41 @@ const TsunamiDeathStats = ({ data }) => {
       const stepId = parseInt(step.id);
       const vars = step.variables || {};
 
-      // Extract death data
-      const deadLocals = parseInt(vars['Dead locals']?.value) || 0;
-      const deadTourists = parseInt(vars['Dead tourists']?.value) || 0;
-      const deadRescuers = parseInt(vars['Dead rescuers']?.value) || 0;
-      const deadCars = parseInt(vars['Dead cars']?.value) || 0;
-      const deadBoats = parseInt(vars['Dead boats']?.value) || 0;
+      // Helper function to find variable value with multiple possible names
+      const getVarValue = (possibleNames) => {
+        for (const name of possibleNames) {
+          const value = vars[name]?.value;
+          if (value !== undefined && value !== null) {
+            return parseInt(value) || 0;
+          }
+        }
+        return 0;
+      };
 
-      // Extract total populations for percentage calculations
-      const safeLocals = parseInt(vars['Safe locals']?.value) || 0;
-      const dangerLocals = parseInt(vars['In danger locals']?.value) || 0;
+      // Extract death data with fallback variable names
+      const deadLocals = getVarValue(['Dead locals', 'dead locals', 'Dead Locals', 'deadLocals', 'Casualties locals', 'casualties locals']);
+      const deadTourists = getVarValue(['Dead tourists', 'dead tourists', 'Dead Tourists', 'deadTourists', 'Casualties tourists', 'casualties tourists']);
+      const deadRescuers = getVarValue(['Dead rescuers', 'dead rescuers', 'Dead Rescuers', 'deadRescuers', 'Casualties rescuers', 'casualties rescuers']);
+      const deadCars = getVarValue(['Dead cars', 'dead cars', 'Dead Cars', 'deadCars', 'Casualties cars', 'casualties cars']);
+      const deadBoats = getVarValue(['Dead boats', 'dead boats', 'Dead Boats', 'deadBoats', 'Casualties boats', 'casualties boats']);
+
+      // Extract total populations for percentage calculations with fallback variable names
+      const safeLocals = getVarValue(['Safe locals', 'safe locals', 'Safe Locals', 'safeLocals']);
+      const dangerLocals = getVarValue(['In danger locals', 'in danger locals', 'In Danger Locals', 'inDangerLocals', 'Danger locals', 'danger locals']);
       const totalLocals = safeLocals + deadLocals + dangerLocals;
 
-      const safeTourists = parseInt(vars['Safe tourists']?.value) || 0;
-      const dangerTourists = parseInt(vars['In danger tourists']?.value) || 0;
+      const safeTourists = getVarValue(['Safe tourists', 'safe tourists', 'Safe Tourists', 'safeTourists']);
+      const dangerTourists = getVarValue(['In danger tourists', 'in danger tourists', 'In Danger Tourists', 'inDangerTourists', 'Danger tourists', 'danger tourists']);
       const totalTourists = safeTourists + deadTourists + dangerTourists;
 
-      const safeRescuers = parseInt(vars['Safe rescuers']?.value) || 0;
-      const dangerRescuers = parseInt(vars['In danger rescuers']?.value) || 0;
+      const safeRescuers = getVarValue(['Safe rescuers', 'safe rescuers', 'Safe Rescuers', 'safeRescuers']);
+      const dangerRescuers = getVarValue(['In danger rescuers', 'in danger rescuers', 'In Danger Rescuers', 'inDangerRescuers', 'Danger rescuers', 'danger rescuers']);
       const totalRescuers = safeRescuers + deadRescuers + dangerRescuers;
 
-      const safeCars = parseInt(vars['Safe cars']?.value) || 0;
+      const safeCars = getVarValue(['Safe cars', 'safe cars', 'Safe Cars', 'safeCars']);
       const totalCars = safeCars + deadCars;
 
-      const safeBoats = parseInt(vars['Safe boats']?.value) || 0;
+      const safeBoats = getVarValue(['Safe boats', 'safe boats', 'Safe Boats', 'safeBoats']);
       const totalBoats = safeBoats + deadBoats;
 
       // Calculate death percentages

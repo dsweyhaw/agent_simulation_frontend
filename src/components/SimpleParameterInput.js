@@ -8,6 +8,13 @@ const SimpleParameterInput = ({ onParametersChange, isSimulationRunning }) => {
     "Tourist Movement Strategy": "following rescuers or locals",
   });
 
+  // Store display values as strings to allow empty input
+  const [displayValues, setDisplayValues] = useState({
+    "Number of locals": "200",
+    "Number of tourists": "100",
+    "Number of rescuers": "20",
+  });
+
   // Send initial parameters when component mounts
   useEffect(() => {
     console.log("=== INITIAL PARAMETERS ===");
@@ -17,9 +24,55 @@ const SimpleParameterInput = ({ onParametersChange, isSimulationRunning }) => {
     }
   }, [onParametersChange]); // Only run when onParametersChange changes
 
+  const handleNumberInputChange = (paramName, inputValue) => {
+    // Allow empty string for better UX
+    setDisplayValues(prev => ({ ...prev, [paramName]: inputValue }));
+    
+    // Parse to number only if input is not empty
+    const numValue = inputValue === "" ? 0 : (parseInt(inputValue) || 0);
+    const newParameters = { ...parameters, [paramName]: numValue };
+    setParameters(newParameters);
+    
+    console.log("=== PARAMETER CHANGE DEBUG ===");
+    console.log("Parameter changed:", paramName, "->", inputValue, "parsed as:", numValue);
+    console.log("New parameters:", newParameters);
+    console.log("onParametersChange callback exists:", !!onParametersChange);
+    if (onParametersChange) {
+      onParametersChange(newParameters);
+    }
+  };
+
+  const handleNumberInputBlur = (paramName) => {
+    // When user leaves the field, ensure we have a valid number
+    const currentValue = displayValues[paramName];
+    if (currentValue === "" || isNaN(parseInt(currentValue))) {
+      // Reset to default value if empty or invalid
+      const defaults = {
+        "Number of locals": 200,
+        "Number of tourists": 100,
+        "Number of rescuers": 20
+      };
+      const defaultValue = defaults[paramName] || 0;
+      setDisplayValues(prev => ({ ...prev, [paramName]: String(defaultValue) }));
+      const newParameters = { ...parameters, [paramName]: defaultValue };
+      setParameters(newParameters);
+      if (onParametersChange) {
+        onParametersChange(newParameters);
+      }
+    } else {
+      // Ensure display value matches parsed value (remove leading zeros)
+      const numValue = parseInt(currentValue);
+      setDisplayValues(prev => ({ ...prev, [paramName]: String(numValue) }));
+    }
+  };
+
   const handleParameterChange = (paramName, value) => {
     const newParameters = { ...parameters, [paramName]: value };
     setParameters(newParameters);
+    // Update display value for number inputs
+    if (paramName === "Number of locals" || paramName === "Number of tourists" || paramName === "Number of rescuers") {
+      setDisplayValues(prev => ({ ...prev, [paramName]: String(value) }));
+    }
     console.log("=== PARAMETER CHANGE DEBUG ===");
     console.log("Parameter changed:", paramName, "->", value);
     console.log("New parameters:", newParameters);
@@ -41,11 +94,18 @@ const SimpleParameterInput = ({ onParametersChange, isSimulationRunning }) => {
             🟡 Number of Locals
           </label>
           <input
-            type="number"
-            value={parameters["Number of locals"]}
+            type="text"
+            value={displayValues["Number of locals"]}
             min="0"
             max="10000"
-            onChange={(e) => handleParameterChange('Number of locals', parseInt(e.target.value) || 0)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow empty string or valid numbers
+              if (value === "" || /^\d*$/.test(value)) {
+                handleNumberInputChange('Number of locals', value);
+              }
+            }}
+            onBlur={() => handleNumberInputBlur('Number of locals')}
             disabled={isSimulationRunning}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
           />
@@ -57,11 +117,18 @@ const SimpleParameterInput = ({ onParametersChange, isSimulationRunning }) => {
             🟣 Number of Tourists
           </label>
           <input
-            type="number"
-            value={parameters["Number of tourists"]}
+            type="text"
+            value={displayValues["Number of tourists"]}
             min="0"
             max="5000"
-            onChange={(e) => handleParameterChange('Number of tourists', parseInt(e.target.value) || 0)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow empty string or valid numbers
+              if (value === "" || /^\d*$/.test(value)) {
+                handleNumberInputChange('Number of tourists', value);
+              }
+            }}
+            onBlur={() => handleNumberInputBlur('Number of tourists')}
             disabled={isSimulationRunning}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
           />
@@ -73,11 +140,18 @@ const SimpleParameterInput = ({ onParametersChange, isSimulationRunning }) => {
             🔵 Number of Rescuers
           </label>
           <input
-            type="number"
-            value={parameters["Number of rescuers"]}
+            type="text"
+            value={displayValues["Number of rescuers"]}
             min="0"
             max="1000"
-            onChange={(e) => handleParameterChange('Number of rescuers', parseInt(e.target.value) || 0)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow empty string or valid numbers
+              if (value === "" || /^\d*$/.test(value)) {
+                handleNumberInputChange('Number of rescuers', value);
+              }
+            }}
+            onBlur={() => handleNumberInputBlur('Number of rescuers')}
             disabled={isSimulationRunning}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
           />

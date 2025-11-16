@@ -181,14 +181,76 @@ function AllResultViewer() {
         );
         setIsTsunamiProject(isTsunami);
         
-        // Mock parameters for testing (will be replaced with real API)
+        // Extract parameters from API response
         if (isTsunami) {
-          setSimulationParameters({
-            "Number of locals": "200",
-            "Number of tourists": "100", 
-            "Number of rescuers": "20",
-            "Tourist Movement Strategy": "following rescuers or locals"
-          });
+          // Get parameters from the first result (assuming all results use same parameters)
+          const firstResultId = resultIdArray[0];
+          const firstDetail = experimentResultDetails.find(item => item.resultId === firstResultId);
+          
+          // Try to get gamaParams from the full response
+          const fetchParamsForFirstResult = async () => {
+            try {
+              const response = await getExperimentResultDetail(firstResultId);
+              const gamaParams = response.data.data.gamaParams || {};
+              console.log("📋 Extracted gamaParams from first result:", gamaParams);
+              
+              // Map API parameter keys to display format
+              const mappedParams = {};
+              
+              // Map from API format to display format
+              if (gamaParams.locals_number !== undefined) {
+                mappedParams["Number of locals"] = String(gamaParams.locals_number);
+              }
+              if (gamaParams.tourists_number !== undefined) {
+                mappedParams["Number of tourists"] = String(gamaParams.tourists_number);
+              }
+              if (gamaParams.rescuers_number !== undefined) {
+                mappedParams["Number of rescuers"] = String(gamaParams.rescuers_number);
+              }
+              if (gamaParams.tourist_strategy !== undefined) {
+                mappedParams["Tourist Movement Strategy"] = String(gamaParams.tourist_strategy);
+              }
+              if (gamaParams.car_strategy !== undefined) {
+                mappedParams["Car Strategy"] = String(gamaParams.car_strategy);
+              }
+              if (gamaParams.tsunami_nb_segments !== undefined) {
+                mappedParams["Tsunami Segments"] = String(gamaParams.tsunami_nb_segments);
+              }
+              if (gamaParams.tsunami_approach_time !== undefined) {
+                mappedParams["Approach Time"] = String(gamaParams.tsunami_approach_time);
+              }
+              if (gamaParams.tsunami_speed_avg !== undefined) {
+                mappedParams["Tsunami Speed"] = String(gamaParams.tsunami_speed_avg);
+              }
+              
+              // Also handle direct format if API returns in display format
+              if (gamaParams["Number of locals"] !== undefined) {
+                mappedParams["Number of locals"] = String(gamaParams["Number of locals"]);
+              }
+              if (gamaParams["Number of tourists"] !== undefined) {
+                mappedParams["Number of tourists"] = String(gamaParams["Number of tourists"]);
+              }
+              if (gamaParams["Number of rescuers"] !== undefined) {
+                mappedParams["Number of rescuers"] = String(gamaParams["Number of rescuers"]);
+              }
+              if (gamaParams["Tourist Movement Strategy"] !== undefined) {
+                mappedParams["Tourist Movement Strategy"] = String(gamaParams["Tourist Movement Strategy"]);
+              }
+              
+              console.log("✅ Mapped parameters:", mappedParams);
+              
+              if (Object.keys(mappedParams).length > 0) {
+                setSimulationParameters(mappedParams);
+              } else {
+                console.warn("⚠️ No parameters found in API response");
+                setSimulationParameters({});
+              }
+            } catch (error) {
+              console.error("Error fetching parameters:", error);
+            }
+          };
+          
+          fetchParamsForFirstResult();
           
           // Force stats refresh when Tsunami project is detected
           console.log("🌊 Tsunami project detected, forcing stats refresh");

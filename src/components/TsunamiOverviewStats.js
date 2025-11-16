@@ -28,28 +28,46 @@ const TsunamiOverviewStats = ({ data }) => {
     }
     console.log("✅ Found", data.steps.length, "steps");
 
+    // Log available variable names from the first step for debugging
+    if (data.steps.length > 0) {
+      const firstStepVars = data.steps[0].variables || {};
+      const availableVarNames = Object.keys(firstStepVars);
+      console.log("📋 Available variable names in API response:", availableVarNames);
+    }
+
     return data.steps.map((step) => {
       const stepId = parseInt(step.id);
       const vars = step.variables || {};
 
-      // Extract population data
-      const safeLocals = parseInt(vars['Safe locals']?.value) || 0;
-      const deadLocals = parseInt(vars['Dead locals']?.value) || 0;
-      const dangerLocals = parseInt(vars['In danger locals']?.value) || 0;
+      // Helper function to find variable value with multiple possible names
+      const getVarValue = (possibleNames) => {
+        for (const name of possibleNames) {
+          const value = vars[name]?.value;
+          if (value !== undefined && value !== null) {
+            return parseInt(value) || 0;
+          }
+        }
+        return 0;
+      };
 
-      const safeTourists = parseInt(vars['Safe tourists']?.value) || 0;
-      const deadTourists = parseInt(vars['Dead tourists']?.value) || 0;
-      const dangerTourists = parseInt(vars['In danger tourists']?.value) || 0;
+      // Extract population data with fallback variable names
+      const safeLocals = getVarValue(['Safe locals', 'safe locals', 'Safe Locals', 'safeLocals']);
+      const deadLocals = getVarValue(['Dead locals', 'dead locals', 'Dead Locals', 'deadLocals', 'Casualties locals', 'casualties locals']);
+      const dangerLocals = getVarValue(['In danger locals', 'in danger locals', 'In Danger Locals', 'inDangerLocals', 'Danger locals', 'danger locals']);
 
-      const safeRescuers = parseInt(vars['Safe rescuers']?.value) || 0;
-      const deadRescuers = parseInt(vars['Dead rescuers']?.value) || 0;
-      const dangerRescuers = parseInt(vars['In danger rescuers']?.value) || 0;
+      const safeTourists = getVarValue(['Safe tourists', 'safe tourists', 'Safe Tourists', 'safeTourists']);
+      const deadTourists = getVarValue(['Dead tourists', 'dead tourists', 'Dead Tourists', 'deadTourists', 'Casualties tourists', 'casualties tourists']);
+      const dangerTourists = getVarValue(['In danger tourists', 'in danger tourists', 'In Danger Tourists', 'inDangerTourists', 'Danger tourists', 'danger tourists']);
 
-      const safeCars = parseInt(vars['Safe cars']?.value) || 0;
-      const deadCars = parseInt(vars['Dead cars']?.value) || 0;
+      const safeRescuers = getVarValue(['Safe rescuers', 'safe rescuers', 'Safe Rescuers', 'safeRescuers']);
+      const deadRescuers = getVarValue(['Dead rescuers', 'dead rescuers', 'Dead Rescuers', 'deadRescuers', 'Casualties rescuers', 'casualties rescuers']);
+      const dangerRescuers = getVarValue(['In danger rescuers', 'in danger rescuers', 'In Danger Rescuers', 'inDangerRescuers', 'Danger rescuers', 'danger rescuers']);
 
-      const safeBoats = parseInt(vars['Safe boats']?.value) || 0;
-      const deadBoats = parseInt(vars['Dead boats']?.value) || 0;
+      const safeCars = getVarValue(['Safe cars', 'safe cars', 'Safe Cars', 'safeCars']);
+      const deadCars = getVarValue(['Dead cars', 'dead cars', 'Dead Cars', 'deadCars', 'Casualties cars', 'casualties cars']);
+
+      const safeBoats = getVarValue(['Safe boats', 'safe boats', 'Safe Boats', 'safeBoats']);
+      const deadBoats = getVarValue(['Dead boats', 'dead boats', 'Dead Boats', 'deadBoats', 'Casualties boats', 'casualties boats']);
 
       // Calculate totals
       const totalSafe = safeLocals + safeTourists + safeRescuers + safeCars + safeBoats;
@@ -87,8 +105,43 @@ const TsunamiOverviewStats = ({ data }) => {
     }).filter(item => item.totalPopulation > 0); // Filter out steps with no data
   }, [data]);
 
-  // Get latest statistics
+  // Get latest statistics (use the last step with data)
   const latestStats = processedData.length > 0 ? processedData[processedData.length - 1] : null;
+  
+  // Debug: Log the latest stats to verify they match backend logs
+  if (latestStats) {
+    console.log("📊 Latest Statistics from Frontend:", {
+      locals: {
+        safe: latestStats.safeLocals,
+        dead: latestStats.deadLocals,
+        danger: latestStats.dangerLocals,
+        total: latestStats.safeLocals + latestStats.deadLocals + latestStats.dangerLocals
+      },
+      tourists: {
+        safe: latestStats.safeTourists,
+        dead: latestStats.deadTourists,
+        danger: latestStats.dangerTourists,
+        total: latestStats.safeTourists + latestStats.deadTourists + latestStats.dangerTourists
+      },
+      rescuers: {
+        safe: latestStats.safeRescuers,
+        dead: latestStats.deadRescuers,
+        danger: latestStats.dangerRescuers,
+        total: latestStats.safeRescuers + latestStats.deadRescuers + latestStats.dangerRescuers
+      },
+      cars: {
+        safe: latestStats.safeCars,
+        dead: latestStats.deadCars,
+        total: latestStats.safeCars + latestStats.deadCars
+      },
+      totals: {
+        safe: latestStats.totalSafe,
+        dead: latestStats.totalDead,
+        danger: latestStats.totalDanger,
+        population: latestStats.totalPopulation
+      }
+    });
+  }
 
   // Prepare pie chart data for population status
   const populationStatusData = latestStats ? [
@@ -174,7 +227,7 @@ const TsunamiOverviewStats = ({ data }) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent).toFixed(1)}%)`}
+                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(1)}%)`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
@@ -212,7 +265,7 @@ const TsunamiOverviewStats = ({ data }) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value, percent }) => `${name}: ${value} (${(percent).toFixed(1)}%)`}
+                label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(1)}%)`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
