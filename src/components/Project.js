@@ -412,7 +412,7 @@ function Project({ selectedProject, modelUploadTrigger }) {
               <NodeMetrics selectedProject={selectedProject} />
             </div>
 
-            {selectedProject.id === 2 && (
+            {selectedProject.name === "pig-farm-multi-simulation" && (
               <div className="px-4 mb-4 sm:ml-80">
                 <div className="flex gap-4">
                   <button
@@ -459,8 +459,8 @@ function Project({ selectedProject, modelUploadTrigger }) {
                 </div>
               )}
 
-              {selectedProject.id === 2 && simulationMode === "multi" ? (
-                // Multi simulation mode for Project ID 2
+              {selectedProject.name === "pig-farm-multi-simulation" && simulationMode === "multi" ? (
+                // Multi simulation mode for pig-farm-multi-simulation project
                 !isSimulationRunning ? (
                   <MultiSimulationInput
                     onSubmit={runMultiSimulationEvent}
@@ -561,7 +561,7 @@ function Project({ selectedProject, modelUploadTrigger }) {
                   className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-md font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-green-400 to-blue-600 group-hover:from-green-400 group-hover:to-blue-600 hover:text-white disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed focus:ring-4 focus:ring-green-200"
                   disabled={simulation.length === 0 || disableSimulation}
                   onClick={() =>
-                    selectedProject.id === 2 && simulationMode === "multi"
+                    selectedProject.name === "pig-farm-multi-simulation" && simulationMode === "multi"
                       ? null // Multi simulation is handled by MultiSimulationInput
                       : runSimulationEvent()
                   }

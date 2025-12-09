@@ -213,7 +213,7 @@ function Simulation({
             )}
 
             {/* Hiển thị node info cho multi simulation */}
-            {selectedProject.id === 2 &&
+            {selectedProject.name === "pig-farm-multi-simulation" &&
               simulation.title &&
               nodeOptions.find((node) => node.id === simulation.nodeId) && (
                 <span className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full">
